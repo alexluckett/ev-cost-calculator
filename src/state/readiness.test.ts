@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PRICES } from '../data/assumptions';
 import { defaultState, makeScenario } from './defaults';
-import { isReady, missingInputs } from './readiness';
+import { businessMileageMatters, isReady, missingInputs } from './readiness';
 
 describe('the app starts empty', () => {
   it('has no cars, no mileage, no salary and no prices', () => {
@@ -80,5 +80,57 @@ describe('readiness', () => {
     state.prices = { ...DEFAULT_PRICES };
     expect(isReady(state)).toBe(true);
     expect(missingInputs(state)).toEqual([]);
+  });
+});
+
+describe('businessMileageMatters', () => {
+  it('is false when nobody claims anything back', () => {
+    const state = defaultState();
+    state.scenarios = [makeScenario('mercedes-a180', 'Mine', 0)];
+    expect(businessMileageMatters(state)).toBe(false);
+  });
+
+  it('is true for a personally owned car claiming the approved rates', () => {
+    const state = defaultState();
+    const s = makeScenario('mercedes-a180', 'Mine', 0);
+    s.ownership = { ...s.ownership, claimsAmap: true };
+    state.scenarios = [s];
+    expect(businessMileageMatters(state)).toBe(true);
+  });
+
+  it('is false for a company car whose employer funds all the charging', () => {
+    const state = defaultState();
+    const s = makeScenario('tesla-model-y-premium-awd', 'Company EV', 0);
+    s.ownership = {
+      ...s.ownership,
+      model: 'company-car',
+      claimsAdvisoryRate: true,
+      employerPaysPrivateFuel: true,
+    };
+    state.scenarios = [s];
+    expect(businessMileageMatters(state)).toBe(false);
+  });
+
+  it('is true for a company car whose driver pays for energy and reclaims it', () => {
+    const state = defaultState();
+    const s = makeScenario('tesla-model-y-premium-awd', 'Company EV', 0);
+    s.ownership = {
+      ...s.ownership,
+      model: 'company-car',
+      claimsAdvisoryRate: true,
+      employerPaysPrivateFuel: false,
+    };
+    state.scenarios = [s];
+    expect(businessMileageMatters(state)).toBe(true);
+  });
+
+  it('is true if any one car in a mixed comparison claims', () => {
+    const state = defaultState();
+    const ev = makeScenario('tesla-model-y-premium-awd', 'Company EV', 0);
+    ev.ownership = { ...ev.ownership, model: 'company-car', employerPaysPrivateFuel: true };
+    const petrol = makeScenario('mercedes-a180', 'Old petrol', 1);
+    petrol.ownership = { ...petrol.ownership, claimsAmap: true };
+    state.scenarios = [ev, petrol];
+    expect(businessMileageMatters(state)).toBe(true);
   });
 });

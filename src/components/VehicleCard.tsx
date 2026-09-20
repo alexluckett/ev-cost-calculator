@@ -119,7 +119,13 @@ export function VehicleCard({
         </div>
       </header>
 
-      <VehiclePicker value={vehicle.presetId} onSelect={onPreset} />
+      {/* A freshly added card has nothing in it, so the list opens itself —
+          picking is the only sensible next move. */}
+      <VehiclePicker
+        value={vehicle.presetId}
+        onSelect={onPreset}
+        startOpen={!vehicle.presetId && vehicle.mpg === 0 && vehicle.miPerKWh === 0}
+      />
 
       {preset?.notes ? <p className="preset-note">{preset.notes}</p> : null}
 

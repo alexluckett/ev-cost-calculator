@@ -173,6 +173,14 @@ p { margin: 0; }
   border-radius: 999px;
 }
 
+.field-inert-note {
+  max-width: 34ch;
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
 .field-preset-note {
   display: flex;
   flex-wrap: wrap;

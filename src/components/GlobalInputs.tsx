@@ -7,6 +7,7 @@ import {
 } from '../data/tax';
 import { money, percent } from '../lib/format';
 import { marginalRatePct } from '../model/tax';
+import { businessMileageMatters } from '../state/readiness';
 import type { AppState } from '../model/types';
 import { Field, NumberInput, Select, Toggle } from './ui';
 
@@ -19,6 +20,8 @@ export function DrivingPanel({
 }) {
   const { usage, tax } = state;
   const rate = marginalRatePct(tax.grossSalaryGBP, tax.region);
+  const businessMatters = businessMileageMatters(state);
+  const hasCars = state.scenarios.length > 0;
 
   return (
     <div className="panel-grid">
@@ -30,8 +33,17 @@ export function DrivingPanel({
         <NumberInput value={usage.termYears} min={1} max={15} step={1} suffix="years" onChange={(termYears) => onPatch({ usage: { ...usage, termYears } })} />
       </Field>
 
-      <Field label="Business mileage" hint="Share of your miles driven on business. Only matters if you claim mileage back or have a company car.">
+      <Field
+        label="Business mileage"
+        hint="Share of your miles driven on business, used only to work out a mileage claim. It is not a way to tell the calculator who pays for your energy — that is set per car, under Ownership and tax."
+      >
         <NumberInput value={usage.businessMilesPct} min={0} max={100} step={5} suffix="%" onChange={(businessMilesPct) => onPatch({ usage: { ...usage, businessMilesPct } })} />
+        {hasCars && !businessMatters ? (
+          <p className="field-inert-note">
+            Changing this makes no difference right now — no car here claims mileage back. If your employer pays
+            for your charging, that is the “employer pays for all fuel or charging” tick on the car itself.
+          </p>
+        ) : null}
       </Field>
 
       <Field label="Where you pay tax">

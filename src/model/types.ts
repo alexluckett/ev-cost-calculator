@@ -326,6 +326,8 @@ export interface TaxResult {
   salarySacrificeNetGBP: number;
   marginalRatePct: number;
   employerClass1aGBP: number;
+  /** Fuel or charging the employer pays for, including the driver's private miles. */
+  employerEnergyGBP: number;
   employerNetCostGBP: number;
 }
 

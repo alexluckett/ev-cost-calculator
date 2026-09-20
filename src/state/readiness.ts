@@ -62,3 +62,20 @@ export function missingInputs(state: AppState): MissingInput[] {
 export function isReady(state: AppState): boolean {
   return missingInputs(state).length === 0;
 }
+
+/**
+ * Whether the business-mileage share changes any number on the page.
+ *
+ * It only ever feeds a mileage claim: the approved rates for a car you own, or
+ * the advisory rate for a company car whose energy you pay for yourself. If
+ * the employer funds all the charging, there is nothing to reclaim and the
+ * field is inert — worth saying so, because an unused input invites people to
+ * bend it into meaning something it does not.
+ */
+export function businessMileageMatters(state: AppState): boolean {
+  return state.scenarios.some((s) => {
+    const companyProvided = s.ownership.model === 'company-car' || s.ownership.model === 'salary-sacrifice';
+    if (!companyProvided) return s.ownership.claimsAmap;
+    return s.ownership.claimsAdvisoryRate && !s.ownership.employerPaysPrivateFuel;
+  });
+}

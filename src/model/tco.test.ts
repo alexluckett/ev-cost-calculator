@@ -209,6 +209,114 @@ describe('ownership models', () => {
   });
 });
 
+describe('an employer that funds all charging', () => {
+  // The real case this covers: an electric company car whose employer pays for
+  // every mile, private ones included. Electricity is not a "fuel" for benefit
+  // purposes, so unlike petrol this costs the driver nothing in tax.
+  function companyEv(state: AppState): Scenario {
+    const s = makeScenario('tesla-model-y-premium-awd', 'Company EV', 0);
+    return {
+      ...s,
+      ownership: {
+        ...s.ownership,
+        model: 'company-car',
+        monthlyPaymentGBP: 600,
+        employerPaysPrivateFuel: true,
+        p11dGBP: 52000,
+      },
+      running: state.scenarios[0].running,
+    };
+  }
+
+  it('costs the driver nothing but the BiK, with no fuel benefit charge', () => {
+    const state = baseState();
+    const result = run(state, companyEv(state));
+    expect(result.annualEnergyGBP).toBe(0);
+    expect(lineValue(result, 'fuel-benefit')).toBe(0);
+    expect(lineValue(result, 'bik')).toBeGreaterThan(0);
+  });
+
+  it('is unaffected by the business mileage share, at any value', () => {
+    const state = baseState();
+    const scenario = companyEv(state);
+    const totals = [0, 50, 100].map(
+      (businessMilesPct) =>
+        run({ ...state, usage: { ...state.usage, businessMilesPct } }, scenario).annualTotalGBP,
+    );
+    // Setting business mileage to 100% is a common guess for this situation.
+    // It changes nothing, which is why the app says so rather than leaving the
+    // field looking like it might be the right lever.
+    expect(totals[1]).toBeCloseTo(totals[0], 6);
+    expect(totals[2]).toBeCloseTo(totals[0], 6);
+  });
+
+  it('charges the energy to the employer, not the driver', () => {
+    const state = baseState();
+    const result = run(state, companyEv(state));
+    expect(result.tax.employerEnergyGBP).toBeCloseTo(result.energy.totalCostGBP, 6);
+    expect(result.tax.employerEnergyGBP).toBeGreaterThan(0);
+  });
+
+  it('leaves the employer nothing to pay for energy when it funds none', () => {
+    const state = baseState();
+    const scenario = companyEv(state);
+    const selfFunded = {
+      ...scenario,
+      ownership: { ...scenario.ownership, employerPaysPrivateFuel: false },
+    };
+    expect(run(state, selfFunded).tax.employerEnergyGBP).toBe(0);
+    expect(run(state, selfFunded).annualEnergyGBP).toBeGreaterThan(0);
+  });
+
+  it('raises the employer’s net cost by the energy it buys, after tax relief', () => {
+    const state = baseState();
+    const scenario = companyEv(state);
+    const funded = run(state, scenario);
+    const notFunded = run(state, {
+      ...scenario,
+      ownership: { ...scenario.ownership, employerPaysPrivateFuel: false },
+    });
+    const corp = state.tax.corporationTaxRatePct / 100;
+    expect(funded.tax.employerNetCostGBP - notFunded.tax.employerNetCostGBP).toBeCloseTo(
+      funded.energy.totalCostGBP * (1 - corp),
+      4,
+    );
+  });
+});
+
+describe('ownership is per car, not global', () => {
+  it('lets a company EV and a personally owned petrol car sit in one comparison', () => {
+    const state = baseState();
+    state.usage = { ...state.usage, businessMilesPct: 30 };
+
+    const ev = makeScenario('tesla-model-y-premium-awd', 'Company EV', 0);
+    ev.ownership = {
+      ...ev.ownership,
+      model: 'company-car',
+      monthlyPaymentGBP: 600,
+      employerPaysPrivateFuel: true,
+      p11dGBP: 52000,
+    };
+
+    const petrol = makeScenario('mercedes-a180', 'My old A-Class', 1);
+    petrol.ownership = { ...petrol.ownership, model: 'personal-cash', claimsAmap: true };
+
+    const evResult = run(state, ev);
+    const petrolResult = run(state, petrol);
+
+    // The EV's energy is the company's problem; the driver sees only BiK.
+    expect(evResult.annualEnergyGBP).toBe(0);
+    expect(evResult.tax.employerEnergyGBP).toBeGreaterThan(0);
+    expect(lineValue(evResult, 'bik')).toBeGreaterThan(0);
+
+    // The petrol car is bought and fuelled by the driver, who claims AMAP.
+    expect(petrolResult.annualEnergyGBP).toBeGreaterThan(0);
+    expect(petrolResult.tax.bikValueGBP).toBe(0);
+    expect(lineValue(petrolResult, 'amap')).toBeLessThan(0);
+    expect(lineValue(petrolResult, 'bik')).toBe(0);
+  });
+});
+
 describe('the announced per-mile road charge', () => {
   it('is off by default and applies only to plug-in cars when enabled', () => {
     const state = baseState();

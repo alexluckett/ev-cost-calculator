@@ -80,6 +80,7 @@ export function computeScenario(
     salarySacrificeNetGBP: 0,
     marginalRatePct: marginalRatePct(tax.grossSalaryGBP, tax.region),
     employerClass1aGBP: 0,
+    employerEnergyGBP: 0,
     employerNetCostGBP: 0,
   };
 
@@ -283,13 +284,21 @@ export function computeScenario(
     const corp = Math.min(100, Math.max(0, tax.corporationTaxRatePct ?? CORPORATION_TAX_MAIN_RATE_PCT)) / 100;
     const class1a = class1aFor(taxResult.bikValueGBP);
     taxResult.employerClass1aGBP = class1a;
+
+    // When the employer funds all fuel or charging, that energy is a real cost
+    // to the business even though the driver never sees a bill for it. It is a
+    // deductible expense, so it attracts the same relief as the rest.
+    const employerEnergyGBP = ownership.employerPaysPrivateFuel ? energy.totalCostGBP : 0;
+    taxResult.employerEnergyGBP = employerEnergyGBP;
+
     if (ownership.model === 'company-car') {
-      taxResult.employerNetCostGBP = (annualLease + class1a) * (1 - corp);
+      taxResult.employerNetCostGBP = (annualLease + class1a + employerEnergyGBP) * (1 - corp);
     } else {
       // Under salary sacrifice the lease is funded from gross pay, so the
-      // employer's position is the NI saved on the sacrifice less Class 1A.
+      // employer's position is the NI saved on the sacrifice less Class 1A,
+      // plus any energy the business chooses to pay for on top.
       const employerNiSaved = (taxResult.salarySacrificeGrossGBP * 15) / 100;
-      taxResult.employerNetCostGBP = (class1a - employerNiSaved) * (1 - corp);
+      taxResult.employerNetCostGBP = (class1a - employerNiSaved + employerEnergyGBP) * (1 - corp);
     }
   }
 

@@ -378,6 +378,17 @@ export function EmployerView({ results }: { results: ScenarioResult[] }) {
               <td key={r.scenarioId}>{money(r.tax.employerClass1aGBP)}</td>
             ))}
           </tr>
+          {relevant.some((r) => r.tax.employerEnergyGBP > 0) ? (
+            <tr>
+              <th scope="row">
+                Fuel or charging the company buys
+                <small>Including the driver’s private mileage, which the driver is not taxed on</small>
+              </th>
+              {relevant.map((r) => (
+                <td key={r.scenarioId}>{r.tax.employerEnergyGBP > 0 ? money(r.tax.employerEnergyGBP) : '—'}</td>
+              ))}
+            </tr>
+          ) : null}
           <tr>
             <th scope="row">
               Net cost after corporation tax relief<small>Negative means the arrangement saves the business money</small>
