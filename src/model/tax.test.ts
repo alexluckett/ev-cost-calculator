@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeScenario } from '../state/defaults';
 import {
+  advisoryElectricPaymentFor,
   amapPaymentFor,
   bikPercentFor,
   bikTaxFor,
@@ -154,6 +155,21 @@ describe('benefit in kind tax', () => {
   });
 });
 
+describe('Advisory Electric Rate', () => {
+  it('pays the home rate when all charging is done at home', () => {
+    expect(advisoryElectricPaymentFor(10000, 100)).toBeCloseTo(700, 2);
+  });
+
+  it('pays the public rate when none of it is', () => {
+    expect(advisoryElectricPaymentFor(10000, 0)).toBeCloseTo(1500, 2);
+  });
+
+  it('blends the two rates by the charging split', () => {
+    // 80% home at 7p and 20% public at 15p is a blended 8.6p.
+    expect(advisoryElectricPaymentFor(10000, 80)).toBeCloseTo(860, 2);
+  });
+});
+
 describe('AMAP', () => {
   it('pays 45p for the first 10,000 miles', () => {
     expect(amapPaymentFor(8000)).toBeCloseTo(3600, 2);
@@ -166,24 +182,51 @@ describe('AMAP', () => {
 
 describe('VED', () => {
   it('adds the Expensive Car Supplement to a car over the threshold', () => {
-    const spec = specOf('tesla-model-y-premium-awd');
+    const spec = specOf('tesla-model-y-premium-awd'); // £51,990 list
     const result = vedFor({ ...spec, firstRegisteredYear: 2026 }, 2026, 3);
     expect(result.supplementApplies).toBe(true);
     // Years 0, 1 and 2 of ownership: the supplement bites in two of them.
-    expect(result.supplementGBP).toBeCloseTo((2 / 3) * 425, 2);
+    expect(result.supplementGBP).toBeCloseTo((2 / 3) * 440, 2);
   });
 
   it('leaves a cheaper car on the standard rate', () => {
     const spec = specOf('vw-golf-15tsi');
     const result = vedFor({ ...spec, firstRegisteredYear: 2026 }, 2026, 3);
     expect(result.supplementApplies).toBe(false);
-    expect(result.annualGBP).toBe(195);
+    expect(result.annualGBP).toBe(200);
+  });
+
+  it('gives a zero-emission car the higher £50,000 threshold', () => {
+    // An EV listed between the two thresholds escapes the supplement; an
+    // otherwise identical petrol car does not.
+    const ev = { ...specOf('tesla-model-y-premium-awd'), listPriceGBP: 45000, firstRegisteredYear: 2026 };
+    const petrol = { ...specOf('vw-golf-15tsi'), listPriceGBP: 45000, firstRegisteredYear: 2026 };
+
+    expect(vedFor(ev, 2026, 3).supplementApplies).toBe(false);
+    expect(vedFor(petrol, 2026, 3).supplementApplies).toBe(true);
+  });
+
+  it('still charges the supplement on an electric car over £50,000', () => {
+    const ev = { ...specOf('tesla-model-y-premium-awd'), listPriceGBP: 55000, firstRegisteredYear: 2026 };
+    expect(vedFor(ev, 2026, 3).supplementApplies).toBe(true);
   });
 
   it('uses the legacy CO2 bands for a pre-2017 car', () => {
-    const spec = specOf('ford-focus-16-mk2'); // 159 g/km, registered 2010
+    const spec = specOf('ford-focus-16-mk2'); // 159 g/km, registered 2010 -> band G
     const result = vedFor(spec, 2026, 3);
-    expect(result.annualGBP).toBe(265);
+    expect(result.annualGBP).toBe(275);
+    expect(result.explanation).toContain('band G');
+  });
+
+  it('picks the right legacy band at each boundary', () => {
+    const spec = specOf('ford-focus-16-mk2');
+    const at = (co2: number) => vedFor({ ...spec, co2gPerKm: co2 }, 2026, 3).annualGBP;
+    expect(at(100)).toBe(20);
+    expect(at(120)).toBe(35);
+    expect(at(121)).toBe(170);
+    expect(at(150)).toBe(225);
+    expect(at(151)).toBe(275);
+    expect(at(256)).toBe(790);
   });
 
   it('drops the supplement once the car is more than six years old', () => {

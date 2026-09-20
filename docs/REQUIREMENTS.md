@@ -29,7 +29,7 @@ These were added because without them the answer the tool gives would be wrong, 
 2. **Time-of-use home tariffs.** An off-peak rate, a peak rate, and the share of home charging that lands off-peak. This is the single biggest lever on UK EV running cost.
 3. **A full charging mix, not just two sources.** Home off-peak, home peak, workplace (often free), public rapid DC, public slow/destination AC.
 4. **Real-world vs official efficiency.** A derating factor applied to both mpg and mi/kWh, plus a seasonal/winter penalty for EVs.
-5. **VED including the Expensive Car Supplement.** Since April 2025 EVs pay VED, and any car with a list price over £40,000 — which includes the Model Y — pays a substantial supplement in years 2–6. Omitting this flatters the EV.
+5. **VED including the Expensive Car Supplement.** Since April 2025 EVs pay VED, and a car above the list-price threshold pays a substantial supplement in years 2–6. Since April 2026 zero-emission cars have a £50,000 threshold against £40,000 for everything else. Omitting this flatters the EV; applying the wrong threshold penalises it.
 6. **Depreciation and finance.** For most people the largest line in true cost of ownership. Optional, because "energy only" is a legitimate view, but available.
 7. **Correct marginal-rate derivation.** Compute income tax and NI on salary, and again on salary minus sacrifice, and take the difference. This handles the personal-allowance taper and the Scottish bands exactly, instead of approximating.
 8. **Employer-side view.** If you own the company, the Class 1A NIC and corporation-tax relief decide whether a company car is actually cheaper.
@@ -104,7 +104,14 @@ These were added because without them the answer the tool gives would be wrong, 
 
 ## 6. Accuracy stance
 
-Tax and duty figures change every April, and vehicle efficiency varies with driving. Every constant used by
-the calculator lives in one place (`src/data/tax.ts` and `src/data/assumptions.ts`), carries an `asOf` label,
-and is surfaced in the Assumptions panel so it can be checked and overridden. The vehicle library holds
-indicative real-world figures, not manufacturer claims, and is editable per comparison.
+Two different standards apply, and conflating them would be dishonest.
+
+**Tax, duty and physical constants** are checked against published sources and are intended to be correct.
+They live in one place (`src/data/tax.ts` and `src/data/assumptions.ts`), carry an `asOf` label, and are
+surfaced in the Assumptions panel so they can be verified and overridden. Rates change every April.
+
+**The vehicle library is estimated, not sourced.** Battery capacities, ranges and list prices are close to
+published specifications; real-world efficiency, insurance and servicing costs are indicative figures chosen
+to be plausible, not measured data. The two fields that most affect the answer — real-world mi/kWh or mpg,
+and insurance — are the least reliable in the file. Every field is editable for exactly this reason, and the
+app says so rather than implying a precision it does not have.

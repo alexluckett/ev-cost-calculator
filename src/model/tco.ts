@@ -251,9 +251,19 @@ export function computeScenario(
         detail: `${Math.round(businessMiles).toLocaleString('en-GB')} business miles at 45p then 25p`,
       });
     } else if (companyProvided && ownership.claimsAdvisoryRate && driverPaysEnergy) {
+      // HMRC's electric rate depends on where the car was charged, so use the
+      // driver's own home-versus-public split rather than a single rate.
+      const homeKWh = energy.rows
+        .filter((r) => r.source === 'homeOffPeak' || r.source === 'homePeak')
+        .reduce((sum, r) => sum + r.gridKWh, 0);
+      const publicKWh = energy.rows
+        .filter((r) => r.source === 'publicRapid' || r.source === 'publicSlow')
+        .reduce((sum, r) => sum + r.gridKWh, 0);
+      const homeSharePct = homeKWh + publicKWh > 0 ? (homeKWh / (homeKWh + publicKWh)) * 100 : 100;
+
       const payment =
         vehicle.fuelType === 'bev'
-          ? advisoryElectricPaymentFor(businessMiles)
+          ? advisoryElectricPaymentFor(businessMiles, homeSharePct)
           : advisoryFuelPaymentFor(businessMiles);
       lines.push({
         key: 'aer',
@@ -262,7 +272,7 @@ export function computeScenario(
         group: 'reimbursement',
         detail:
           vehicle.fuelType === 'bev'
-            ? `${Math.round(businessMiles).toLocaleString('en-GB')} miles at the Advisory Electric Rate`
+            ? `${Math.round(businessMiles).toLocaleString('en-GB')} miles at the Advisory Electric Rate, blended ${Math.round(homeSharePct)}% home / ${100 - Math.round(homeSharePct)}% public`
             : `${Math.round(businessMiles).toLocaleString('en-GB')} miles at an indicative advisory fuel rate`,
       });
     }

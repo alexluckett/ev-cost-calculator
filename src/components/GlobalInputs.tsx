@@ -1,5 +1,10 @@
 import { PUBLIC_NETWORK_PRESETS, TARIFF_PRESETS } from '../data/assumptions';
-import { TAX_YEARS } from '../data/tax';
+import {
+  ADVISORY_ELECTRIC_RATE_HOME_PENCE,
+  ADVISORY_ELECTRIC_RATE_PUBLIC_PENCE,
+  TAX_YEARS,
+  VED,
+} from '../data/tax';
 import { money, percent } from '../lib/format';
 import { marginalRatePct } from '../model/tax';
 import type { AppState } from '../model/types';
@@ -205,17 +210,29 @@ export function AssumptionsPanel({
             NI at 8% then 2%, and the Scottish bands where they apply.
           </li>
           <li>
-            <strong>Road tax</strong> — {money(195)} standard rate, plus a {money(425)} Expensive Car Supplement for
-            five years on cars listed above {money(40000)}. Cars registered before April 2017 use the legacy CO2 bands.
+            <strong>Road tax</strong> — {money(VED.standardGBP)} standard rate, plus a{' '}
+            {money(VED.expensiveCarSupplementGBP)} Expensive Car Supplement for five years on cars listed above{' '}
+            {money(VED.expensiveCarThresholdGBP)} — or above{' '}
+            {money(VED.expensiveCarThresholdZeroEmissionGBP)} for zero-emission cars, which have had their own higher
+            threshold since April 2026. Cars registered before April 2017 use the legacy CO2 bands.
           </li>
           <li>
-            <strong>Mileage</strong> — 45p then 25p approved rates for your own car, and the Advisory Electric Rate
-            for a company EV.
+            <strong>Mileage</strong> — 45p then 25p approved rates for your own car. For a company EV the Advisory
+            Electric Rate is {ADVISORY_ELECTRIC_RATE_HOME_PENCE}p a mile for home charging and{' '}
+            {ADVISORY_ELECTRIC_RATE_PUBLIC_PENCE}p for public charging, blended here using your charging mix.
           </li>
         </ul>
         <p className="caveat">
-          These are defaults current for the 2025/26 tax year, and later years follow the published schedule. Rates
-          change every April — check anything you are relying on, and override it here if it has moved.
+          Tax and duty figures were checked against published rates for 2026/27; later years follow the published
+          schedule. Rates change every April — check anything you are relying on, and override it here if it has
+          moved.
+        </p>
+        <p className="caveat">
+          <strong>Vehicle library figures are estimates, not measurements.</strong> Battery capacities, ranges and
+          list prices are close to the published specifications, but the real-world mi/kWh and mpg figures — and the
+          typical insurance and servicing costs — are indicative rather than sourced from any dataset. They are
+          starting points. Your own trip computer and your own renewal quote beat every one of them, so replace them
+          where you can.
         </p>
       </div>
     </div>

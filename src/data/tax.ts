@@ -142,7 +142,13 @@ export interface VedRates {
   standardGBP: number;
   /** Additional rate for cars with a list price above the threshold. */
   expensiveCarSupplementGBP: number;
+  /** Threshold for petrol, diesel and hybrid cars. */
   expensiveCarThresholdGBP: number;
+  /**
+   * Zero-emission cars have had their own, higher threshold since April 2026.
+   * Before that they shared the £40,000 threshold.
+   */
+  expensiveCarThresholdZeroEmissionGBP: number;
   /** Years of ownership the supplement applies to (licences 2–6). */
   expensiveCarSupplementYears: number;
   /** First-year rate for a zero-emission car. */
@@ -150,17 +156,18 @@ export interface VedRates {
 }
 
 export const VED: VedRates = {
-  standardGBP: 195,
-  expensiveCarSupplementGBP: 425,
+  standardGBP: 200,
+  expensiveCarSupplementGBP: 440,
   expensiveCarThresholdGBP: 40000,
+  expensiveCarThresholdZeroEmissionGBP: 50000,
   expensiveCarSupplementYears: 5,
   firstYearZeroEmissionGBP: 10,
 };
 
 export const VED_SOURCE: SourcedValue<string> = {
   value: 'VED standard and additional rates',
-  asOf: '2025/26 — later years are uprated each April, check before relying on them',
-  note: 'Electric cars have paid VED since April 2025. The Expensive Car Supplement applies to cars with a list price over £40,000 for five years from the second licence — it catches most new EVs, including the Model Y.',
+  asOf: '2026/27 — rates are uprated each April',
+  note: 'Electric cars have paid VED since April 2025. From April 2026 the Expensive Car Supplement threshold for zero-emission cars rose to £50,000, while petrol, diesel and hybrids stay at £40,000. The supplement runs for five years from the second licence.',
 };
 
 // ---------------------------------------------------------------------------
@@ -172,8 +179,13 @@ export const AMAP_FIRST_10K_PENCE = 45;
 export const AMAP_ABOVE_10K_PENCE = 25;
 export const AMAP_THRESHOLD_MILES = 10000;
 
-/** Advisory Electric Rate for reimbursing business miles in a company EV. */
-export const ADVISORY_ELECTRIC_RATE_PENCE = 8;
+/**
+ * Advisory Electric Rate for reimbursing business miles in a company EV.
+ * HMRC splits this by where the car was charged, which is why the calculator
+ * blends the two using your charging mix rather than quoting a single rate.
+ */
+export const ADVISORY_ELECTRIC_RATE_HOME_PENCE = 7;
+export const ADVISORY_ELECTRIC_RATE_PUBLIC_PENCE = 15;
 
 /**
  * Indicative Advisory Fuel Rate for a combustion company car. The real rates
@@ -183,12 +195,12 @@ export const ADVISORY_ELECTRIC_RATE_PENCE = 8;
 export const ADVISORY_FUEL_RATE_PENCE = 14;
 
 /** Car fuel benefit multiplier, used when an employer pays for private fuel. */
-export const CAR_FUEL_BENEFIT_MULTIPLIER = 28200;
+export const CAR_FUEL_BENEFIT_MULTIPLIER = 27800;
 
 export const MILEAGE_SOURCE: SourcedValue<string> = {
   value: 'AMAP, AER and the car fuel benefit multiplier',
-  asOf: '2025/26',
-  note: 'AMAP has been 45p/25p since 2011. The Advisory Electric Rate is reviewed quarterly and has moved between 7p and 9p.',
+  asOf: '2026/27',
+  note: 'AMAP has been 45p/25p since 2011. The Advisory Electric Rate is reviewed quarterly and is now split by where the car was charged: 7p a mile for home charging and 15p for public charging.',
 };
 
 // ---------------------------------------------------------------------------

@@ -33,12 +33,14 @@ company car, and salary sacrifice — each with the tax that actually applies:
   effective band between £100,000 and £125,140 and the Scottish rates fall out correctly.
 - The car fuel benefit charge when an employer pays for private petrol — and correctly *no*
   charge for electricity.
-- AMAP and Advisory Electric Rate mileage reimbursement.
+- AMAP, and the Advisory Electric Rate blended between its home and public charging rates
+  using your own charging mix.
 - An employer view with Class 1A NIC and corporation tax relief.
 
-**The costs people forget.** VED including the Expensive Car Supplement, which catches almost
-every new EV, depreciation, tyres per mile, and the announced per-mile road charge for plug-in
-cars (off by default, because it is not yet in force).
+**The costs people forget.** VED including the Expensive Car Supplement — with the higher
+£50,000 threshold that zero-emission cars have had since April 2026, against £40,000 for
+everything else — depreciation, tyres per mile, and the announced per-mile road charge for
+plug-in cars (off by default, because it is not yet in force).
 
 **Answers, not just numbers.** Break-even solving — the petrol price, electricity rate, rapid
 share and annual mileage at which two cars cost the same — plus sensitivity charts and a full
@@ -75,17 +77,36 @@ The calculation core is deliberately separate from the UI and has no React in it
 numbers can be tested directly. `npm test` covers the energy model, the tax rules and the
 scenario assembly.
 
-## About the numbers
+## About the numbers — provenance
 
-Vehicle figures are indicative real-world values, not manufacturer claims — official
-consumption tests are optimistic, and comparing optimistic numbers to each other tells you
-nothing useful.
+Be clear about what is solid here and what is not, because they are not the same.
 
-Tax and duty constants live in `src/data/tax.ts` and `src/data/assumptions.ts`, each with an
-"as of" label, and all of them are exposed and editable in the app's Assumptions panel.
-They are current for the 2025/26 tax year with later years following the published schedule.
-**Rates change every April.** Check anything you are about to make an expensive decision on,
-and override it in the app if it has moved.
+**Tax and duty constants** (`src/data/tax.ts`) are statutory figures checked against published
+rates for 2026/27: the BiK appropriate percentages, income tax and NI thresholds, VED standard
+rate and Expensive Car Supplement including the split threshold, AMAP, the Advisory Electric
+Rate and the car fuel benefit multiplier. Each carries an "as of" label. Rates change every
+April, so check anything load-bearing and override it in the Assumptions panel if it has moved.
+
+**Physical constants** (`src/data/assumptions.ts`) are standard published conversion factors
+(CO2 per litre of fuel, grid carbon intensity) or well-established engineering ranges
+(charging efficiency). These are reliable.
+
+**The vehicle library** (`src/data/vehicles.ts`) is *estimated, not sourced*. Battery
+capacities, WLTP ranges and list prices are close to published specifications, but nothing in
+that file was taken from a manufacturer datasheet or a measured dataset. In particular:
+
+| Field | How much to trust it |
+|---|---|
+| Usable battery, WLTP range, CO2, peak DC | Close to published figures |
+| List price | Indicative; new-car prices move constantly |
+| **Real-world mi/kWh and mpg** | **Estimates.** Plausible, not measured |
+| **Insurance and servicing** | **Rough guesses.** They vary enormously by driver |
+| Used values | Very rough |
+
+The two fields that most affect the answer — real-world efficiency and insurance — are the two
+least reliable. This is deliberate: every one of them is editable, and your own trip computer
+and your own renewal quote are better than any table. Treat the presets as a way to avoid a
+blank form, not as a source of truth.
 
 This is a calculator, not financial or tax advice.
 

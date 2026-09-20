@@ -8,7 +8,8 @@
  */
 
 import {
-  ADVISORY_ELECTRIC_RATE_PENCE,
+  ADVISORY_ELECTRIC_RATE_HOME_PENCE,
+  ADVISORY_ELECTRIC_RATE_PUBLIC_PENCE,
   ADVISORY_FUEL_RATE_PENCE,
   AMAP_ABOVE_10K_PENCE,
   AMAP_FIRST_10K_PENCE,
@@ -186,8 +187,16 @@ export function amapPaymentFor(businessMiles: number): number {
   return (first * AMAP_FIRST_10K_PENCE + rest * AMAP_ABOVE_10K_PENCE) / 100;
 }
 
-export function advisoryElectricPaymentFor(businessMiles: number): number {
-  return (Math.max(0, businessMiles) * ADVISORY_ELECTRIC_RATE_PENCE) / 100;
+/**
+ * HMRC pays a different rate depending on where the car was charged, so the
+ * two are blended by the driver's own split between home and public charging.
+ * `homeSharePct` is the share of charging done at home, 0–100.
+ */
+export function advisoryElectricPaymentFor(businessMiles: number, homeSharePct = 100): number {
+  const home = Math.min(100, Math.max(0, homeSharePct)) / 100;
+  const rate =
+    home * ADVISORY_ELECTRIC_RATE_HOME_PENCE + (1 - home) * ADVISORY_ELECTRIC_RATE_PUBLIC_PENCE;
+  return (Math.max(0, businessMiles) * rate) / 100;
 }
 
 export function advisoryFuelPaymentFor(businessMiles: number): number {
@@ -198,21 +207,24 @@ export function advisoryFuelPaymentFor(businessMiles: number): number {
 // Vehicle Excise Duty
 // ---------------------------------------------------------------------------
 
-/** Bands for cars first registered between March 2001 and March 2017. */
-const LEGACY_VED_BANDS: { upToCo2: number; annualGBP: number }[] = [
-  { upToCo2: 100, annualGBP: 20 },
-  { upToCo2: 110, annualGBP: 20 },
-  { upToCo2: 120, annualGBP: 35 },
-  { upToCo2: 130, annualGBP: 165 },
-  { upToCo2: 140, annualGBP: 195 },
-  { upToCo2: 150, annualGBP: 215 },
-  { upToCo2: 165, annualGBP: 265 },
-  { upToCo2: 175, annualGBP: 315 },
-  { upToCo2: 185, annualGBP: 345 },
-  { upToCo2: 200, annualGBP: 395 },
-  { upToCo2: 225, annualGBP: 430 },
-  { upToCo2: 255, annualGBP: 735 },
-  { upToCo2: Infinity, annualGBP: 760 },
+/**
+ * Bands for cars first registered between March 2001 and March 2017, at
+ * 2026/27 rates. Band letters A–M run in the same order as the entries here.
+ */
+const LEGACY_VED_BANDS: { upToCo2: number; annualGBP: number; band: string }[] = [
+  { upToCo2: 100, annualGBP: 20, band: 'A' },
+  { upToCo2: 110, annualGBP: 20, band: 'B' },
+  { upToCo2: 120, annualGBP: 35, band: 'C' },
+  { upToCo2: 130, annualGBP: 170, band: 'D' },
+  { upToCo2: 140, annualGBP: 200, band: 'E' },
+  { upToCo2: 150, annualGBP: 225, band: 'F' },
+  { upToCo2: 165, annualGBP: 275, band: 'G' },
+  { upToCo2: 175, annualGBP: 325, band: 'H' },
+  { upToCo2: 185, annualGBP: 360, band: 'I' },
+  { upToCo2: 200, annualGBP: 410, band: 'J' },
+  { upToCo2: 225, annualGBP: 445, band: 'K' },
+  { upToCo2: 255, annualGBP: 760, band: 'L' },
+  { upToCo2: Infinity, annualGBP: 790, band: 'M' },
 ];
 
 export interface VedBreakdown {
@@ -248,11 +260,16 @@ export function vedFor(
       explanation:
         vehicle.fuelType === 'bev'
           ? 'Registered before April 2017. Electric cars have paid the standard rate since April 2025.'
-          : `Registered before April 2017, so taxed on the legacy CO2 bands at ${vehicle.co2gPerKm} g/km.`,
+          : `Registered before April 2017, so taxed on the legacy CO2 bands: band ${band.band} at ${vehicle.co2gPerKm} g/km.`,
     };
   }
 
-  const overThreshold = vehicle.listPriceGBP > VED.expensiveCarThresholdGBP;
+  // Zero-emission cars have had their own, higher threshold since April 2026.
+  const threshold =
+    vehicle.fuelType === 'bev'
+      ? VED.expensiveCarThresholdZeroEmissionGBP
+      : VED.expensiveCarThresholdGBP;
+  const overThreshold = vehicle.listPriceGBP > threshold;
   // The supplement runs with licences 2 to 6, i.e. ages 1 to 5 inclusive.
   let supplementYears = 0;
   const years = Math.max(1, Math.round(termYears));
@@ -268,7 +285,7 @@ export function vedFor(
     supplementGBP,
     supplementApplies: supplementGBP > 0,
     explanation: overThreshold
-      ? `List price over £${VED.expensiveCarThresholdGBP.toLocaleString('en-GB')}, so the £${VED.expensiveCarSupplementGBP} Expensive Car Supplement applies for five years from the second licence — averaged over your ${years}-year term.`
-      : 'Standard rate. List price is below the Expensive Car Supplement threshold.',
+      ? `List price over £${threshold.toLocaleString('en-GB')}, so the £${VED.expensiveCarSupplementGBP} Expensive Car Supplement applies for five years from the second licence — averaged over your ${years}-year term.`
+      : `Standard rate. List price is below the £${threshold.toLocaleString('en-GB')} Expensive Car Supplement threshold${vehicle.fuelType === 'bev' ? ' for zero-emission cars' : ''}.`,
   };
 }
