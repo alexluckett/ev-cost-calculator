@@ -44,7 +44,8 @@ These were added because without them the answer the tool gives would be wrong, 
 ## 4. Feature list (what was built)
 
 ### 4.1 Vehicle selection
-- Searchable preset library of UK-market vehicles (BEV, PHEV, hybrid, petrol, diesel), including older used cars for the "my old car" comparison.
+- **The app opens with nothing in it.** No example cars, no assumed mileage, no default tariff — the tool never asserts anything about the driver that the driver has not said. Results are withheld until the inputs behind them exist, and the app lists exactly what is still outstanding.
+- Searchable preset library of 115 UK-market vehicles (BEV, PHEV, hybrid, petrol, diesel), including older used cars for the "my old car" comparison.
 - Presets autofill: usable battery capacity, real-world and official efficiency, WLTP range, peak DC rate, tank capacity, mpg, CO2 g/km, list price / P11D, VED band and typical insurance and servicing costs.
 - Every field remains editable; a preset is a starting point, not a constraint. Overrides are
   detected by comparing against what the preset would have filled in, marked in the UI, counted

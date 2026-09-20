@@ -8,7 +8,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { encodeState, hydrate, stateFromLocation } from './codec';
-import { MAX_SCENARIOS, SCENARIO_COLOURS, defaultRunningCosts, defaultState, makeScenario, specFromPreset } from './defaults';
+import {
+  MAX_SCENARIOS,
+  SCENARIO_COLOURS,
+  defaultRunningCosts,
+  defaultState,
+  makeCustomScenario,
+  makeScenario,
+  specFromPreset,
+} from './defaults';
 import { PRESETS_BY_ID } from '../data/vehicles';
 import type { AppState, Scenario } from '../model/types';
 
@@ -30,7 +38,8 @@ export interface StoreActions {
   patch: (patch: Partial<AppState>) => void;
   updateScenario: (id: string, updater: (s: Scenario) => Scenario) => void;
   applyPreset: (id: string, presetId: string) => void;
-  addScenario: () => void;
+  /** Adds a car from the library, or a blank one to fill in by hand. */
+  addScenario: (presetId?: string) => void;
   removeScenario: (id: string) => void;
   duplicateScenario: (id: string) => void;
   setBaseline: (id: string) => void;
@@ -81,27 +90,30 @@ export function useAppState(): [AppState, StoreActions] {
           };
         });
       },
-      addScenario: () =>
+      addScenario: (presetId) =>
         setState((prev) => {
           if (prev.scenarios.length >= MAX_SCENARIOS) return prev;
           const used = new Set(prev.scenarios.map((s) => s.colour));
-          const colourIndex = SCENARIO_COLOURS.findIndex((c) => !used.has(c));
+          const found = SCENARIO_COLOURS.findIndex((c) => !used.has(c));
+          const colourIndex = found < 0 ? prev.scenarios.length : found;
+          const scenario = presetId
+            ? makeScenario(presetId, undefined, colourIndex)
+            : makeCustomScenario('My car', colourIndex);
           return {
             ...prev,
-            scenarios: [
-              ...prev.scenarios,
-              makeScenario('vw-golf-15tsi', undefined, colourIndex < 0 ? prev.scenarios.length : colourIndex),
-            ],
+            scenarios: [...prev.scenarios, scenario],
+            // The first car added becomes what everything else is measured against.
+            baselineId: prev.scenarios.length === 0 ? scenario.id : prev.baselineId,
           };
         }),
       removeScenario: (id) =>
         setState((prev) => {
-          if (prev.scenarios.length <= 1) return prev;
           const scenarios = prev.scenarios.filter((s) => s.id !== id);
           return {
             ...prev,
             scenarios,
-            baselineId: prev.baselineId === id ? scenarios[0].id : prev.baselineId,
+            baselineId:
+              prev.baselineId === id ? (scenarios[0]?.id ?? '') : prev.baselineId,
           };
         }),
       duplicateScenario: (id) =>

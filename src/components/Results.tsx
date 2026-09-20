@@ -19,6 +19,7 @@ export function HeadlineCards({
   results: ScenarioResult[];
 }) {
   const baseline = results.find((r) => r.scenarioId === state.baselineId) ?? results[0];
+  if (!baseline) return null;
 
   return (
     <div className="headline-grid">
@@ -272,6 +273,7 @@ export function SensitivitySection({
 
 export function BreakEvenSection({ state, results }: { state: AppState; results: ScenarioResult[] }) {
   const baseline = results.find((r) => r.scenarioId === state.baselineId) ?? results[0];
+  if (!baseline) return <p className="empty-note">Add a car to see this.</p>;
   const others = results.filter((r) => r.scenarioId !== baseline.scenarioId);
   const axes: BreakEvenAxis[] = ['petrolPrice', 'homeOffPeakRate', 'publicRapidRate', 'annualMiles', 'rapidSharePct'];
 

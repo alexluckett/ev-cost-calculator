@@ -1,12 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_PRICES } from '../data/assumptions';
 import { defaultState, makeScenario } from '../state/defaults';
 import { AXES, breakEven, computeAll, describeBreakEven, sensitivitySeries, withAxisValue } from './compare';
 import { computeScenario } from './tco';
 import type { AppState, Scenario } from './types';
 
+/**
+ * The app itself starts empty, so these tests build the comparison they need
+ * explicitly rather than relying on anything being there by default.
+ */
 function baseState(): AppState {
   const state = defaultState();
   state.usage = { annualMiles: 10000, businessMilesPct: 0, termYears: 3 };
+  state.prices = { ...DEFAULT_PRICES };
+  state.tax = { ...state.tax, grossSalaryGBP: 60000 };
+  state.scenarios = [
+    makeScenario('tesla-model-y-premium-awd', 'My Model Y', 0),
+    makeScenario('vw-golf-15tsi', 'Modern petrol', 1),
+    makeScenario('vw-golf-14tsi-mk6', 'My old car', 2),
+  ];
+  state.baselineId = state.scenarios[0].id;
   return state;
 }
 

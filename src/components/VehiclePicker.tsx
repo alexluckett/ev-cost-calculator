@@ -25,11 +25,14 @@ function summarise(p: VehiclePreset): string {
 export function VehiclePicker({
   value,
   onSelect,
+  startOpen = false,
 }: {
   value: string | null;
   onSelect: (presetId: string) => void;
+  /** Opens the list immediately, for the empty state where picking is the task. */
+  startOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [query, setQuery] = useState('');
   const [fuelFilter, setFuelFilter] = useState<FuelType | 'all'>('all');
   const containerRef = useRef<HTMLDivElement>(null);

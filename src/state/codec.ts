@@ -4,8 +4,8 @@
  * the app, so anything missing or malformed falls back to the default.
  */
 
-import { DEFAULT_ASSUMPTIONS, DEFAULT_PRICES } from '../data/assumptions';
-import { SCENARIO_COLOURS, defaultCharging, defaultState } from './defaults';
+import { DEFAULT_ASSUMPTIONS } from '../data/assumptions';
+import { SCENARIO_COLOURS, blankVehicleSpec, defaultCharging, defaultOwnership, defaultState } from './defaults';
 import type { AppState, Scenario } from '../model/types';
 
 export const STATE_VERSION = 1;
@@ -48,13 +48,15 @@ export function hydrate(raw: unknown): AppState {
   if (!raw || typeof raw !== 'object') return base;
   const input = raw as Partial<AppState>;
 
-  const scenarios: Scenario[] = Array.isArray(input.scenarios) && input.scenarios.length > 0
-    ? input.scenarios.map((s, i) => hydrateScenario(s, base.scenarios[0], i))
+  // An empty comparison is a legitimate state — the app starts that way — so
+  // a saved file with no cars must stay empty rather than have some put back.
+  const scenarios: Scenario[] = Array.isArray(input.scenarios)
+    ? input.scenarios.map((s, i) => hydrateScenario(s, i))
     : base.scenarios;
 
   const baselineId = scenarios.some((s) => s.id === input.baselineId)
     ? (input.baselineId as string)
-    : scenarios[0].id;
+    : (scenarios[0]?.id ?? '');
 
   return {
     usage: {
@@ -62,7 +64,7 @@ export function hydrate(raw: unknown): AppState {
       businessMilesPct: num(input.usage?.businessMilesPct, base.usage.businessMilesPct),
       termYears: num(input.usage?.termYears, base.usage.termYears),
     },
-    prices: { ...DEFAULT_PRICES, ...(input.prices ?? {}) },
+    prices: { ...base.prices, ...(input.prices ?? {}) },
     tax: { ...base.tax, ...(input.tax ?? {}) },
     assumptions: { ...DEFAULT_ASSUMPTIONS, ...(input.assumptions ?? {}) },
     scenarios,
@@ -71,16 +73,27 @@ export function hydrate(raw: unknown): AppState {
   };
 }
 
-function hydrateScenario(raw: unknown, template: Scenario, index: number): Scenario {
+function hydrateScenario(raw: unknown, index: number): Scenario {
   const s = (raw ?? {}) as Partial<Scenario>;
+  const vehicle = { ...blankVehicleSpec(), ...(s.vehicle ?? {}) };
+  const blankRunning = {
+    insuranceGBP: 0,
+    servicingGBP: 0,
+    tyresPencePerMile: 0,
+    motGBP: 0,
+    breakdownCoverGBP: 0,
+    vedOverrideGBP: null,
+    congestionChargeDaysPerYear: 0,
+    otherAnnualGBP: 0,
+  };
   return {
     id: typeof s.id === 'string' && s.id ? s.id : `s${index}-${Math.random().toString(36).slice(2, 8)}`,
     label: typeof s.label === 'string' ? s.label : `Vehicle ${index + 1}`,
     colour: typeof s.colour === 'string' ? s.colour : SCENARIO_COLOURS[index % SCENARIO_COLOURS.length],
-    vehicle: { ...template.vehicle, ...(s.vehicle ?? {}) },
+    vehicle,
     charging: { ...defaultCharging(), ...(s.charging ?? {}), mix: { ...defaultCharging().mix, ...(s.charging?.mix ?? {}) } },
-    ownership: { ...template.ownership, ...(s.ownership ?? {}) },
-    running: { ...template.running, ...(s.running ?? {}) },
+    ownership: { ...defaultOwnership(vehicle), ...(s.ownership ?? {}) },
+    running: { ...blankRunning, ...(s.running ?? {}) },
   };
 }
 

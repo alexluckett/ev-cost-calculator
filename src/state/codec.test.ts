@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { decodeState, encodeState, hydrate } from './codec';
-import { defaultState } from './defaults';
+import { defaultState, makeScenario } from './defaults';
 
 describe('URL state codec', () => {
   it('round-trips a comparison', () => {
     const state = defaultState();
     state.usage.annualMiles = 17500;
+    state.scenarios = [makeScenario('tesla-model-y-premium-awd', 'My Model Y', 0)];
     state.scenarios[0].label = 'My Model Y — £ and ⚡';
     const decoded = decodeState(encodeState(state));
     expect(decoded?.usage.annualMiles).toBe(17500);
@@ -30,8 +31,14 @@ describe('URL state codec', () => {
   });
 
   it('survives complete nonsense', () => {
-    expect(hydrate(null).scenarios.length).toBeGreaterThan(0);
-    expect(hydrate(42).scenarios.length).toBeGreaterThan(0);
-    expect(hydrate({ scenarios: [] }).scenarios.length).toBeGreaterThan(0);
+    expect(hydrate(null).scenarios).toEqual([]);
+    expect(hydrate(42).scenarios).toEqual([]);
+    expect(hydrate(undefined).usage.termYears).toBeGreaterThan(0);
+  });
+
+  it('keeps an empty comparison empty instead of putting cars back', () => {
+    const state = hydrate({ scenarios: [] });
+    expect(state.scenarios).toEqual([]);
+    expect(state.baselineId).toBe('');
   });
 });

@@ -19,7 +19,12 @@ buy on a home charger never reaches the battery, and that shows up on your bill.
 your charging, or as "one session a month of 45 kWh", which the calculator converts into a
 share and rebalances the rest of the mix around.
 
-**Presets fill in defaults; you own the values.** Sixty-odd UK-market cars autofill usable
+**The app starts empty.** No sample cars, no assumed mileage, no invented tariff. Nothing in
+it describes you until you say so, and the results stay hidden until the inputs they depend on
+actually exist — a calculator that answers "£0 a year" from blank fields is worse than one that
+says what it still needs.
+
+**Presets fill in defaults; you own the values.** 115 UK-market cars autofill usable
 battery capacity, real-world efficiency, tank size, mpg, CO2, list price and typical insurance
 and servicing — including older used cars for the "should I just keep my current one"
 comparison. A preset is only a starting point, so every field it touches stays editable, any
@@ -95,7 +100,7 @@ April, so check anything load-bearing and override it in the Assumptions panel i
 (CO2 per litre of fuel, grid carbon intensity) or well-established engineering ranges
 (charging efficiency). These are reliable.
 
-**The vehicle library** (`src/data/vehicles.ts`) is *estimated, not sourced*. Battery
+**The vehicle library** (`src/data/vehicles.ts`, 115 cars) is *estimated, not sourced*. Battery
 capacities, WLTP ranges and list prices are close to published specifications, but nothing in
 that file was taken from a manufacturer datasheet or a measured dataset. In particular:
 
