@@ -19,7 +19,7 @@ function summarise(p: VehiclePreset): string {
   if (p.fuelType === 'phev') {
     return `${p.usableBatteryKWh} kWh · ${p.phevElectricRangeMi} electric miles · ${p.realWorldMpg} mpg on petrol`;
   }
-  return `${p.realWorldMpg} mpg real-world · ${p.tankLitres} L tank · ${p.co2gPerKm} g/km`;
+  return `${p.realWorldMpg} mpg real-world · ${p.co2gPerKm} g/km`;
 }
 
 export function VehiclePicker({

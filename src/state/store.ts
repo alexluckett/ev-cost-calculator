@@ -2,22 +2,14 @@
  * State container.
  *
  * Everything lives in the browser — localStorage for "pick up where I left
- * off", and the URL hash for sharing a comparison with someone else. There is
- * no server, so there is nothing to sign in to and nothing to lose.
+ * off", and the URL hash for sharing. There is no server, so there is nothing
+ * to sign in to and nothing to lose.
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { encodeState, hydrate, stateFromLocation } from './codec';
-import {
-  MAX_SCENARIOS,
-  SCENARIO_COLOURS,
-  defaultRunningCosts,
-  defaultState,
-  makeCustomScenario,
-  makeScenario,
-  specFromPreset,
-} from './defaults';
 import { PRESETS_BY_ID } from '../data/vehicles';
+import { encodeState, hydrate, stateFromLocation } from './codec';
+import { MAX_SCENARIOS, SCENARIO_COLOURS, defaultState, makeCustomScenario, makeScenario, specFromPreset } from './defaults';
 import type { AppState, Scenario } from '../model/types';
 
 const STORAGE_KEY = 'ev-cost-calculator:v1';
@@ -38,13 +30,9 @@ export interface StoreActions {
   patch: (patch: Partial<AppState>) => void;
   updateScenario: (id: string, updater: (s: Scenario) => Scenario) => void;
   applyPreset: (id: string, presetId: string) => void;
-  /** Adds a car from the library, or a blank one to fill in by hand. */
   addScenario: (presetId?: string) => void;
   removeScenario: (id: string) => void;
-  duplicateScenario: (id: string) => void;
-  setBaseline: (id: string) => void;
   reset: () => void;
-  replace: (state: AppState) => void;
 }
 
 export function useAppState(): [AppState, StoreActions] {
@@ -59,8 +47,7 @@ export function useAppState(): [AppState, StoreActions] {
       // Private browsing, quota, or storage disabled — carry on regardless.
     }
     const handle = window.setTimeout(() => {
-      const encoded = encodeState(state);
-      window.history.replaceState(null, '', `#c=${encoded}`);
+      window.history.replaceState(null, '', `#c=${encodeState(state)}`);
     }, 400);
     return () => window.clearTimeout(handle);
   }, [state]);
@@ -82,11 +69,16 @@ export function useAppState(): [AppState, StoreActions] {
           const vehicle = specFromPreset(preset);
           return {
             ...s,
-            // Keep a label the user has personalised; replace an auto one.
-            label: s.label === s.vehicle.name ? vehicle.name : s.label,
+            // Keep a label the user has personalised; replace a placeholder
+            // one, including the name a blank card was created with.
+            label: !s.vehicle.presetId || s.label === s.vehicle.name ? vehicle.name : s.label,
             vehicle,
-            running: defaultRunningCosts(preset),
             ownership: { ...s.ownership, p11dGBP: vehicle.listPriceGBP },
+            running: {
+              insuranceGBP: preset.typicalInsuranceGBP,
+              servicingGBP: preset.typicalServicingGBP,
+              tyresPencePerMile: preset.fuelType === 'bev' ? 2.6 : 1.9,
+            },
           };
         });
       },
@@ -96,44 +88,17 @@ export function useAppState(): [AppState, StoreActions] {
           const used = new Set(prev.scenarios.map((s) => s.colour));
           const found = SCENARIO_COLOURS.findIndex((c) => !used.has(c));
           const colourIndex = found < 0 ? prev.scenarios.length : found;
-          const scenario = presetId
-            ? makeScenario(presetId, undefined, colourIndex)
-            : makeCustomScenario('My car', colourIndex);
           return {
             ...prev,
-            scenarios: [...prev.scenarios, scenario],
-            // The first car added becomes what everything else is measured against.
-            baselineId: prev.scenarios.length === 0 ? scenario.id : prev.baselineId,
+            scenarios: [
+              ...prev.scenarios,
+              presetId ? makeScenario(presetId, undefined, colourIndex) : makeCustomScenario('My car', colourIndex),
+            ],
           };
         }),
       removeScenario: (id) =>
-        setState((prev) => {
-          const scenarios = prev.scenarios.filter((s) => s.id !== id);
-          return {
-            ...prev,
-            scenarios,
-            baselineId:
-              prev.baselineId === id ? (scenarios[0]?.id ?? '') : prev.baselineId,
-          };
-        }),
-      duplicateScenario: (id) =>
-        setState((prev) => {
-          if (prev.scenarios.length >= MAX_SCENARIOS) return prev;
-          const source = prev.scenarios.find((s) => s.id === id);
-          if (!source) return prev;
-          const used = new Set(prev.scenarios.map((s) => s.colour));
-          const colour = SCENARIO_COLOURS.find((c) => !used.has(c)) ?? source.colour;
-          const copy: Scenario = {
-            ...structuredClone(source),
-            id: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`,
-            label: `${source.label} (copy)`,
-            colour,
-          };
-          return { ...prev, scenarios: [...prev.scenarios, copy] };
-        }),
-      setBaseline: (id) => setState((prev) => ({ ...prev, baselineId: id })),
+        setState((prev) => ({ ...prev, scenarios: prev.scenarios.filter((s) => s.id !== id) })),
       reset: () => setState(defaultState()),
-      replace: (next) => setState(hydrate(next)),
     };
   }, []);
 

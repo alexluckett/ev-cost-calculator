@@ -118,3 +118,30 @@ published specifications; real-world efficiency, insurance and servicing costs a
 to be plausible, not measured data. The two fields that most affect the answer — real-world mi/kWh or mpg,
 and insurance — are the least reliable in the file. Every field is editable for exactly this reason, and the
 app says so rather than implying a precision it does not have.
+
+
+---
+
+## 7. Simplification pass
+
+The feature list in section 4 was built as specified and then deliberately cut back, because
+the result was more complex than the job required: 71 input controls across 9 sections, for a
+tool whose question is "what does each of these cars cost me to run".
+
+**Kept** — the vehicle library and editable specifications, mileage and prices, the
+home-versus-rapid charging split with charging losses, the three ownership models with company
+car tax and salary sacrifice relief, road tax, insurance/servicing/tyres, and the results: cost
+per mile, per year, per month, over the term, plus a fully itemised table.
+
+**Cut** — break-even solving across six axes, sensitivity charts, the employer cost view, CO2
+output, depreciation and finance, congestion and clean-air charges, the announced 2028 per-mile
+road charge, AMAP/AER mileage claims and the business-mileage input, override tracking with
+per-field revert, CSV and JSON export, the time-of-use charging mix across five sources, and
+the editable assumptions panel.
+
+**Retained despite the cuts**, because removing them would make an answer *wrong* rather than
+merely simpler: charging losses (now fixed constants rather than editable inputs), the car fuel
+benefit charge, the Expensive Car Supplement with its split threshold, and the legacy pre-2017
+road tax bands.
+
+The result is about 2,100 lines of source against 5,100, with roughly 20 inputs instead of 71.
