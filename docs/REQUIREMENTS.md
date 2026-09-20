@@ -46,7 +46,9 @@ These were added because without them the answer the tool gives would be wrong, 
 ### 4.1 Vehicle selection
 - Searchable preset library of UK-market vehicles (BEV, PHEV, hybrid, petrol, diesel), including older used cars for the "my old car" comparison.
 - Presets autofill: usable battery capacity, real-world and official efficiency, WLTP range, peak DC rate, tank capacity, mpg, CO2 g/km, list price / P11D, VED band and typical insurance and servicing costs.
-- Every field remains editable; a preset is a starting point, not a constraint.
+- Every field remains editable; a preset is a starting point, not a constraint. Overrides are
+  detected by comparing against what the preset would have filled in, marked in the UI, counted
+  in the section header, and individually or collectively revertible.
 - Fully custom vehicles supported.
 - Compare 2 to 4 vehicles side by side.
 

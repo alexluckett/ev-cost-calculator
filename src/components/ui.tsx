@@ -1,25 +1,49 @@
 import { useId, useState, type ReactNode } from 'react';
 
+export interface OverrideState {
+  /** The preset's value, already formatted for display. */
+  presetValue: string;
+  onReset: () => void;
+}
+
 interface FieldProps {
   label: string;
   hint?: string;
   children?: ReactNode;
+  /**
+   * Present when this value came from a preset and has since been changed.
+   * Shows what the preset said and offers a way back to it.
+   */
+  override?: OverrideState | null;
 }
 
 /** A labelled control with an optional explanation revealed on demand. */
-export function Field({ label, hint, children }: FieldProps) {
+export function Field({ label, hint, children, override }: FieldProps) {
   const id = useId();
   return (
-    <div className="field">
+    <div className={`field${override ? ' is-overridden' : ''}`}>
       <div className="field-label-row">
         <label className="field-label" htmlFor={id}>
           {label}
         </label>
+        {override ? (
+          <span className="field-changed" title="You have changed this from the preset">
+            changed
+          </span>
+        ) : null}
         {hint ? <InfoDot text={hint} /> : null}
       </div>
       <div className="field-control" id={id}>
         {children}
       </div>
+      {override ? (
+        <p className="field-preset-note">
+          Preset: {override.presetValue}
+          <button type="button" className="link-button" onClick={override.onReset}>
+            Reset
+          </button>
+        </p>
+      ) : null}
     </div>
   );
 }

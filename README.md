@@ -19,10 +19,14 @@ buy on a home charger never reaches the battery, and that shows up on your bill.
 your charging, or as "one session a month of 45 kWh", which the calculator converts into a
 share and rebalances the rest of the mix around.
 
-**A vehicle library that autofills the numbers.** Sixty-odd UK-market cars with usable battery
-capacity, real-world efficiency, tank size, mpg, CO2, list price and typical insurance and
-servicing — including older used cars for the "should I just keep my current one" comparison.
-Every autofilled value stays editable, because your own mi/kWh beats anything in a table.
+**Presets fill in defaults; you own the values.** Sixty-odd UK-market cars autofill usable
+battery capacity, real-world efficiency, tank size, mpg, CO2, list price and typical insurance
+and servicing — including older used cars for the "should I just keep my current one"
+comparison. A preset is only a starting point, so every field it touches stays editable, any
+value you change is marked **changed**, the section header counts how many you have changed,
+and each one shows the preset figure with a one-click way back. "Reset all to preset" restores
+the lot without disturbing your label, charging mix or how the car is paid for. Your own
+mi/kWh and your own insurance renewal beat anything in the table.
 
 **Personal versus company ownership.** Four models — owned outright, personal finance or lease,
 company car, and salary sacrifice — each with the tax that actually applies:
@@ -104,9 +108,10 @@ that file was taken from a manufacturer datasheet or a measured dataset. In part
 | Used values | Very rough |
 
 The two fields that most affect the answer — real-world efficiency and insurance — are the two
-least reliable. This is deliberate: every one of them is editable, and your own trip computer
-and your own renewal quote are better than any table. Treat the presets as a way to avoid a
-blank form, not as a source of truth.
+least reliable. This is why presets are treated strictly as defaults: every field is editable,
+overrides are marked and counted, and the preset value is always shown next to anything you
+have changed so you can see what you moved away from and put it back. Treat the library as a
+way to avoid a blank form, not as a source of truth.
 
 This is a calculator, not financial or tax advice.
 

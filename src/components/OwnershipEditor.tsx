@@ -1,6 +1,6 @@
 import { money, percent } from '../lib/format';
 import type { OwnershipInputs, OwnershipModel, ScenarioResult, TaxProfile, VehicleSpec } from '../model/types';
-import { Field, NumberInput, Select, Toggle } from './ui';
+import { Field, NumberInput, type OverrideState, Select, Toggle } from './ui';
 
 const MODEL_OPTIONS: { value: OwnershipModel; label: string }[] = [
   { value: 'personal-cash', label: 'Personal — owned outright' },
@@ -25,12 +25,21 @@ export function OwnershipEditor({
   vehicle,
   tax,
   result,
+  presetP11dGBP,
+  purchasePriceOverride,
+  onResetP11d,
+  onChangeVehicle,
   onChange,
 }: {
   ownership: OwnershipInputs;
   vehicle: VehicleSpec;
   tax: TaxProfile;
   result: ScenarioResult;
+  /** What the preset would put in the P11D box, or null for a custom car. */
+  presetP11dGBP: number | null;
+  purchasePriceOverride: OverrideState | null;
+  onResetP11d: () => void;
+  onChangeVehicle: <K extends keyof VehicleSpec>(key: K, value: VehicleSpec[K]) => void;
   onChange: (next: OwnershipInputs) => void;
 }) {
   const isCompany = ownership.model === 'company-car' || ownership.model === 'salary-sacrifice';
@@ -47,14 +56,17 @@ export function OwnershipEditor({
       {ownership.model === 'personal-cash' ? (
         <>
           <div className="grid-2">
-            <Field label="What you paid for it" hint="Used as the basis for depreciation.">
+            <Field
+              label="What you paid for it"
+              hint="The basis for depreciation. The preset is an indicative market value — replace it with what you actually paid."
+              override={purchasePriceOverride}
+            >
               <NumberInput
                 value={vehicle.purchasePriceGBP}
                 min={0}
                 step={500}
                 prefix="£"
-                disabled
-                onChange={() => undefined}
+                onChange={(v) => onChangeVehicle('purchasePriceGBP', v)}
               />
             </Field>
             <Field label="Value left at the end of the term" hint="As a percentage of what you paid. A three-year-old car is typically worth 45–60% of its new price; an old car close to the bottom of its curve loses very little.">
@@ -94,7 +106,15 @@ export function OwnershipEditor({
       {isCompany ? (
         <>
           <div className="grid-2">
-            <Field label="P11D value" hint="List price including options and delivery, excluding first registration fee and road tax. This is what BiK is charged on.">
+            <Field
+              label="P11D value"
+              hint="List price including options and delivery, excluding the first registration fee and road tax. This is what BiK is charged on, so add the cost of any options you specified."
+              override={
+                presetP11dGBP !== null && Math.abs(ownership.p11dGBP - presetP11dGBP) > 1e-6
+                  ? { presetValue: money(presetP11dGBP), onReset: onResetP11d }
+                  : null
+              }
+            >
               <NumberInput value={ownership.p11dGBP} min={0} step={500} prefix="£" onChange={(v) => set('p11dGBP', v)} />
             </Field>
             <Field label="Capital contribution" hint="A one-off payment towards the car reduces the value BiK is charged on, capped at £5,000 by statute.">
